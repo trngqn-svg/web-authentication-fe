@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authService } from "../services/authService";
 import { attachInterceptors } from "../api/axios";
+import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
   login: (data: { email: string; password: string }) => Promise<void>;
@@ -25,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [isReady, setIsReady] = useState(false);
-
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const parseExpiresIn = (str: string) => {
@@ -60,14 +61,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     localStorage.setItem("auth_event", Date.now().toString());
     localStorage.setItem('logout', Date.now().toString());
-    window.location.href = "/login";
+    navigate("/login", { replace: true });
   }, [queryClient]);
 
   useEffect(() => {
     const handler = (e: StorageEvent) => {
       if (e.key === "auth_event") {
         clearAuth();
-        window.location.href = "/login";
+        navigate("/login", { replace: true });
       }
     };
     window.addEventListener("storage", handler);
