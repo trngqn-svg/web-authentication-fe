@@ -24,13 +24,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.getItem("accessToken")
   );
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
-
-  // *** Ngăn vòng lặp chuyển hướng ***
   const [isReady, setIsReady] = useState(false);
 
   const queryClient = useQueryClient();
 
-  // ===== Utils =====
   const parseExpiresIn = (str: string) => {
     if (str.endsWith("m")) return parseInt(str) * 60 * 1000;
     if (str.endsWith("s")) return parseInt(str) * 1000;
@@ -80,8 +77,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     attachInterceptors({
       getAccessToken: () => localStorage.getItem("accessToken"),
-      setAccessToken,
+      setAccessToken: (token) => {
+        setAccessTokenState(token);
+        localStorage.setItem("accessToken", token);
+      },
       logout: logoutHandler,
+      refreshToken: async () => {
+        const data = await authService.refresh();
+        saveExpires(data.expiresIn);
+        return data;
+      },
     });
   }, [logoutHandler]);
 
@@ -96,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const refreshTokenCookieExists = document.cookie.includes('refreshToken='); // check cookie
+    const refreshTokenCookieExists = document.cookie.includes('refreshToken=');
     if (!refreshTokenCookieExists) {
       setIsReady(true);
       return;
@@ -142,11 +147,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleStorage = (event: StorageEvent) => {
       if (event.key === 'logout') {
-        // Tab khác gọi logout → thực hiện logout ở tab này
         logoutHandler();
       }
       if (event.key === 'accessToken') {
-        // Tab khác login → cập nhật accessToken ở tab này
         setAccessTokenState(event.newValue);
       }
     };
