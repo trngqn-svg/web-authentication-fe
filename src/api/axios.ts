@@ -53,7 +53,7 @@ export function attachInterceptors({ getAccessToken, setAccessToken, logout, ref
             isRefreshing = false;
           }
         } else {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             refreshQueue.push((token: string) => {
               if (!original.headers) original.headers = new AxiosHeaders();
               original.headers.set("Authorization", `Bearer ${token}`);
